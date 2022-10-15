@@ -1,4 +1,4 @@
-package com.example.zooapp;
+package com.example.contact;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -11,7 +11,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 public class AddActivity extends AppCompatActivity {
-    EditText editTextNome;
+    EditText editTextNome, editTextEmail, editTextPhone;
     Button btnInsert;
     SQLiteDatabase bancoDados;
 
@@ -20,7 +20,10 @@ public class AddActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
 
-        editTextNome = (EditText) findViewById(R.id.editTextNome) ;
+        editTextNome = (EditText) findViewById(R.id.editTextNome);
+        editTextEmail = (EditText) findViewById(R.id.editTextEmail);
+        editTextPhone = (EditText) findViewById(R.id.editTextPhone);
+
         btnInsert = (Button) findViewById(R.id.btnEdit);
 
         btnInsert.setOnClickListener(new View.OnClickListener() {
@@ -35,10 +38,13 @@ public class AddActivity extends AppCompatActivity {
     public void cadastrarAnimal(){
             if(!TextUtils.isEmpty(editTextNome.getText().toString())){
                 try{
-                    bancoDados = openOrCreateDatabase("zoo", MODE_PRIVATE, null);
-                    String sql = "INSERT INTO animal (nome) VALUES (?)";
+                    bancoDados = openOrCreateDatabase("contact", MODE_PRIVATE, null);
+                    String sql = "INSERT INTO contact (nome, email, phone, active) VALUES (?, ?, ?, ?)";
                     SQLiteStatement stmt = bancoDados.compileStatement(sql);
                     stmt.bindString(1,editTextNome.getText().toString());
+                    stmt.bindString(2,editTextEmail.getText().toString());
+                    stmt.bindString(3,editTextPhone.getText().toString());
+                    stmt.bindLong(4,1);
                     stmt.executeInsert();
                     bancoDados.close();
                     finish();

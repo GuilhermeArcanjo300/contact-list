@@ -1,7 +1,9 @@
-package com.example.zooapp;
+package com.example.contact;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -9,9 +11,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -45,7 +45,25 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
             public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                excluir(i);
+                AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+                alert.setTitle("Excluir");
+                alert.setMessage("Tem certeza que deseja excluir esse contato?");
+                alert.setPositiveButton("Sim", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        excluir(i);
+                        dialog.dismiss();
+                    }
+                }).setNegativeButton("Não", new DialogInterface.OnClickListener() {
+
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+                alert.show();
                 return true;
             }
         });
@@ -66,11 +84,14 @@ public class MainActivity extends AppCompatActivity {
 
     public void criarBancoDados(){
         try {
-            bancoDados = openOrCreateDatabase("zoo", MODE_PRIVATE, null);
-            bancoDados.execSQL("CREATE TABLE IF NOT EXISTS animal(" +
+            bancoDados = openOrCreateDatabase("contact", MODE_PRIVATE, null);
+            //bancoDados.execSQL("DROP TABLE contact");
+            bancoDados.execSQL("CREATE TABLE IF NOT EXISTS contact(" +
                     " id INTEGER PRIMARY KEY AUTOINCREMENT" +
-                    " , nome VARCHAR)");
-            //bancoDados.execSQL("DELETE FROM animal");
+                    " , nome VARCHAR" +
+                    " , email VARCHAR" +
+                    " , phone VARCHAR" +
+                    " , active INTEGER)");
             bancoDados.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -80,44 +101,27 @@ public class MainActivity extends AppCompatActivity {
     public void listarDados(){
         try {
 
-            bancoDados = openOrCreateDatabase("zoo", MODE_PRIVATE, null);
-            Cursor meuCursor = bancoDados.rawQuery("SELECT id, nome FROM animal", null);
-            ArrayList<String> linhas = new ArrayList<String>();
-            ArrayAdapter meuAdapter = new ArrayAdapter<String>(
-                    this,
-                    android.R.layout.simple_list_item_1,
-                    android.R.id.text1,
-                    linhas
-            );
-            listView.setAdapter(meuAdapter);
+            bancoDados = openOrCreateDatabase("contact", MODE_PRIVATE, null);
+            Cursor meuCursor = bancoDados.rawQuery("SELECT id, nome, email, phone, active FROM contact", null);
+            ArrayList<String> row = new ArrayList<String>();
+
+            ArrayList<User> userArray = new ArrayList<User>();
+            CustomListAdapter customListAdapter = new CustomListAdapter(this, userArray);
+
             arrayIds = new ArrayList<>();
             meuCursor.moveToFirst();
             do {
-                linhas.add(meuCursor.getString(0) + " - " + meuCursor.getString(1));
+                User user = new User();
+                user.setName(meuCursor.getString(1));
+                user.setEmail(meuCursor.getString(2));
+                user.setPhone(meuCursor.getString(3));
+                user.setActive(meuCursor.getInt(4));
+                userArray.add(user);
+
                 arrayIds.add(meuCursor.getInt(0));
             } while(meuCursor.moveToNext());
 
-        }catch (Exception e){
-            e.printStackTrace();
-        }
-    }
-
-    public void inserirDadosTemp(){
-        try{
-            bancoDados = openOrCreateDatabase("zoo", MODE_PRIVATE, null);
-            String sql = "INSERT INTO animal (nome) VALUES (?)";
-            SQLiteStatement stmt = bancoDados.compileStatement(sql);
-
-            stmt.bindString(1,"Ema");
-            stmt.executeInsert();
-
-            stmt.bindString(1,"Zebra");
-            stmt.executeInsert();
-
-            stmt.bindString(1,"Gorila");
-            stmt.executeInsert();
-
-            bancoDados.close();
+            listView.setAdapter(customListAdapter);
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -130,8 +134,8 @@ public class MainActivity extends AppCompatActivity {
 
     public void excluir(Integer i){
         try{
-            bancoDados = openOrCreateDatabase("zoo", MODE_PRIVATE, null);
-            String sql = "DELETE FROM animal WHERE id =?";
+            bancoDados = openOrCreateDatabase("contact", MODE_PRIVATE, null);
+            String sql = "DELETE FROM contact WHERE id =?";
             SQLiteStatement stmt = bancoDados.compileStatement(sql);
             stmt.bindLong(1, arrayIds.get(i));
             stmt.executeUpdateDelete();
